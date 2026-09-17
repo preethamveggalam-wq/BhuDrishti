@@ -237,3 +237,17 @@ V49 note: Future City has been restored to the pre-V45 presentation/3D experienc
 - Why am I seeing this? explainability controls on derived land-risk signals and modeled people/mobility values.
 - Demo Safe mode with local fallback content, runtime-service notice, and recovery actions to avoid blank workflows.
 - Workspace and startup recovery paths now offer a one-click Demo Safe fallback.
+
+
+## Public deployment
+See `DEPLOY_PUBLIC.md`.
+
+## V54 analytics chart reliability
+- Analytics & Reports now renders the Analytical Trend from server data when available and uses a deterministic local calculation as a visible fallback when the analytics endpoint is unavailable.
+- The graph no longer disappears just because the public frontend cannot reach `/api/analytics`.
+
+## V56 reliability fix
+- Public Vercel frontend automatically falls back to the live Render API when `VITE_API_URL` was omitted during deployment.
+- Backend CORS accepts the configured frontend origin plus Vercel preview hosts for the prototype.
+- Login/register now reports network, cold-start, HTTP, and validation errors instead of a generic `Request failed.`.
+- Backend root `/` returns a JSON status message.

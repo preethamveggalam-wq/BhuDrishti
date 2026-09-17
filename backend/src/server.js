@@ -65,7 +65,28 @@ function saveData(data) {
 
 let data = loadData();
 const app = express();
-app.use(cors());
+const configuredOrigins = String(process.env.FRONTEND_URL || "").split(",").map(v => v.trim().replace(/\/$/, "")).filter(Boolean);
+function originAllowed(origin) {
+  if (!origin) return true;
+  const normalized = String(origin).replace(/\/$/, "");
+  if (configuredOrigins.length === 0) return true;
+  if (configuredOrigins.includes(normalized)) return true;
+  // Vercel creates preview URLs for production branches. Allow those in this
+  // prototype deployment so the public frontend does not fail CORS during a
+  // deployment transition. Production deployments can tighten this later.
+  try {
+    const u = new URL(normalized);
+    if (u.protocol === "https:" && u.hostname.endsWith(".vercel.app")) return true;
+  } catch {}
+  return false;
+}
+app.use(cors({
+  origin(origin, callback) {
+    if (originAllowed(origin)) return callback(null, true);
+    return callback(new Error("CORS origin not allowed"));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 const authCodes = new Map();
@@ -1249,4 +1270,4 @@ app.post("/api/reset-demo-data", (_req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`BhuDrishti API running on http://localhost:${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`BhuDrishti API listening on port ${PORT}`));

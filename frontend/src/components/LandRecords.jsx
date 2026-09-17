@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE } from "../api";
 
 const OFFICIAL_BHUBHARATI = "https://bhubharati.telangana.gov.in/knowLandStatus";
 const OFFICIAL_GIS = "https://bhubharati.telangana.gov.in/gis/";
@@ -82,7 +83,7 @@ export default function LandRecords({ onParcel, onRecord, onSelected }) {
       let body = null;
       let backendMessage = "";
       try {
-        const res = await fetch(`/api/land-records?${params.toString()}`, { signal: AbortSignal.timeout ? AbortSignal.timeout(12000) : undefined });
+        const res = await fetch(`${API_BASE}/land-records?${params.toString()}`, { signal: AbortSignal.timeout ? AbortSignal.timeout(12000) : undefined });
         const json = await res.json().catch(() => ({}));
         if (res.ok) body = json;
         else backendMessage = json.error || `Backend lookup failed (${res.status})`;

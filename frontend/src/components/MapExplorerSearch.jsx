@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { API_BASE } from "../api";
 
 export default function MapExplorerSearch({ onRecord, onParcel, onResults, selectedRecord }) {
   const [districts, setDistricts] = useState([]);
@@ -23,7 +24,7 @@ export default function MapExplorerSearch({ onRecord, onParcel, onResults, selec
       const params = new URLSearchParams();
       if (district) params.set("district", district);
       if (mandal) params.set("mandal", mandal);
-      const body = await (await fetch(`/api/gis-hierarchy?${params}`)).json();
+      const body = await (await fetch(`${API_BASE}/gis-hierarchy?${params}`)).json();
       setSourceStatus(body.sourceStatus || "GIS hierarchy");
       if (level === "district") setDistricts(body.districts || []);
       if (level === "mandal") setMandals(body.mandals || []);
@@ -42,7 +43,7 @@ export default function MapExplorerSearch({ onRecord, onParcel, onResults, selec
     setLoading(true); setError(""); setResults([]);
     try {
       const params = new URLSearchParams(Object.entries(form).filter(([,v]) => String(v).trim()));
-      const res = await fetch(`/api/land-search?${params}`);
+      const res = await fetch(`${API_BASE}/land-search?${params}`);
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || "Land search failed");
       setResults(body.records || []);
@@ -56,7 +57,7 @@ export default function MapExplorerSearch({ onRecord, onParcel, onResults, selec
   async function selectRecord(r) {
     try {
       const params = new URLSearchParams({ district: form.district || "", mandal: r.mandal || form.mandal || "", village: r.village || form.village || "", survey: r.surveyNo || "" });
-      const res = await fetch(`/api/land-records?${params}`);
+      const res = await fetch(`${API_BASE}/land-records?${params}`);
       const body = await res.json();
       if (res.ok) {
         onRecord?.({ ...body, focusNonce: Date.now() });

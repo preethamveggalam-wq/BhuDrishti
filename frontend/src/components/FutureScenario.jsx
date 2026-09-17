@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { API_BASE } from "../api";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -836,7 +837,7 @@ export default function FutureScenario() {
       setEvidenceLoading(true);
       setEvidenceError("");
       try {
-        const response = await fetch(`/api/future-evidence?lat=${encodeURIComponent(activeCenter[1])}&lng=${encodeURIComponent(activeCenter[0])}&radiusKm=${encodeURIComponent(evidenceRadius)}`);
+        const response = await fetch(`${API_BASE}/future-evidence?lat=${encodeURIComponent(activeCenter[1])}&lng=${encodeURIComponent(activeCenter[0])}&radiusKm=${encodeURIComponent(evidenceRadius)}`);
         const body = await response.json();
         if (!response.ok) throw new Error(body?.error || "Evidence lookup failed");
         if (alive) setEvidence(body);
@@ -864,7 +865,7 @@ export default function FutureScenario() {
     setYear(p.year);
     setGeoError("");
     try {
-      const response = await fetch(`/api/geocode?q=${encodeURIComponent(p.location)}`);
+      const response = await fetch(`${API_BASE}/geocode?q=${encodeURIComponent(p.location)}`);
       const body = await response.json();
       const hit = Array.isArray(body) ? body[0] : null;
       if (!hit?.lat || !hit?.lon) throw new Error("Location not found");

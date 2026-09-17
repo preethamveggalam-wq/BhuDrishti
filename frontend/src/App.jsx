@@ -6,8 +6,9 @@ import MapExplorerSearch from "./components/MapExplorerSearch";
 import AI from "./components/AI";
 import PolicyComparisonMap from "./components/PolicyComparisonMap";
 import { regions as fallbackRegions, research as fallbackResearch } from "./data/demo";
+import { API_BASE } from "./api";
 
-const API = "/api";
+const API = API_BASE;
 const tabs = [
   ["home","Overview"],["explore","Land Map & GIS"],["dashboard","Analytics & Reports"],["research","Legal Research"],
   ["ai","AI Evidence"],["policy","Policy Sandbox"],["future","Future City"]
@@ -104,7 +105,7 @@ function App(){
     if(demoSafe){setDashboardData(null);return;}
     fetch(`${API}/analytics?region=${encodeURIComponent(region)}&period=${encodeURIComponent(dashboardPeriod)}`)
       .then(r=>r.ok?r.json():Promise.reject())
-      .then(setDashboardData).catch(()=>setDashboardData(null));
+      .then(payload=>setDashboardData(prev=>payload&&payload.trend?.length?payload:clientAnalyticsFallback(region,selected,dashboardPeriod))).catch(()=>setDashboardData(clientAnalyticsFallback(region,selected,dashboardPeriod)));
   },[region,dashboardPeriod,demoSafe]);
   const navigate=(id)=>{setView(id);window.history.replaceState(null,"",`#${id}`);window.scrollTo({top:0,behavior:"smooth"});};
   useEffect(()=>{const h=()=>{const id=window.location.hash.slice(1);if(tabs.some(x=>x[0]===id))setView(id)};h();window.addEventListener("hashchange",h);return()=>window.removeEventListener("hashchange",h)},[]);
@@ -170,9 +171,22 @@ function App(){
       try{
         const endpoint=authMode==="register"?`${API}/auth/register`:`${API}/auth/login`;
         const payload=authMode==="register"?{name,email,password}:{email,password};
-        const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+        const controller = new AbortController();
+        const timeoutId = setTimeout(()=>controller.abort(), 25000);
+        let r;
+        try {
+          r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:controller.signal});
+        } catch(error) {
+          if (error?.name === "AbortError") throw new Error("The server is waking up. Please wait a few seconds and try again.");
+          throw new Error(`Cannot reach BhuDrishti API (${API}). Check that the public backend is live.`);
+        } finally {
+          clearTimeout(timeoutId);
+        }
         const body=await r.json().catch(()=>({}));
-        if(!r.ok) throw new Error(body.error||"Request failed.");
+        if(!r.ok) {
+          if (r.status === 405) throw new Error("Public API route is not configured. Please refresh the public site and try again.");
+          throw new Error(body.error||`Authentication request failed (HTTP ${r.status}).`);
+        }
         if(authMode==="register"){
           setAuthMode("signin");
           setAuthForm({name:"",email,password:""});
@@ -183,7 +197,7 @@ function App(){
         sessionStorage.setItem("bhudrishti_auth_user",JSON.stringify(user));
         setAuthUser(user);
         setShowLogin(false);
-      }catch(err){setAuthMessage(err.message||"Authentication failed.");}
+      }catch(err){setAuthMessage(err.message||"Authentication failed. Please try again.");}
     }} />}
 
     <div className="governance-layout-v12">
@@ -250,7 +264,7 @@ function Explore({region,setRegion,regions,selected,activeLayer,setActiveLayer,m
     if (!r || !Number.isFinite(Number(r.latitude)) || !Number.isFinite(Number(r.longitude))) { setNearby([]); return; }
     let cancelled = false;
     setNearbyLoading(true); setNearbyError("");
-    fetch(`/api/nearby-parcels?lat=${encodeURIComponent(r.latitude)}&lng=${encodeURIComponent(r.longitude)}&radius=1500`)
+    fetch(`${API_BASE}/nearby-parcels?lat=${encodeURIComponent(r.latitude)}&lng=${encodeURIComponent(r.longitude)}&radius=1500`)
       .then(res => res.json().then(body => ({ok:res.ok, body})))
       .then(({ok,body}) => { if (cancelled) return; if (!ok) throw new Error(body.error || "Nearby parcel lookup failed"); setNearby((body.records || []).filter(x => x.surveyNo !== r.surveyNo).slice(0,8)); })
       .catch(err => { if (!cancelled) { setNearby([]); setNearbyError(err.message || "Nearby parcel lookup failed"); } })
@@ -276,7 +290,7 @@ function Explore({region,setRegion,regions,selected,activeLayer,setActiveLayer,m
   async function focusNearby(r) {
     try {
       const params = new URLSearchParams({ district: r.district || selectedParcel?.record?.district || "", mandal: r.mandal || "", village: r.village || "", survey: r.surveyNo || "" });
-      const res = await fetch(`/api/land-records?${params}`);
+      const res = await fetch(`${API_BASE}/land-records?${params}`);
       const body = await res.json();
       if (res.ok) {
         setLandRecord({ ...body, focusNonce: Date.now() });
@@ -483,7 +497,25 @@ function DemoScenarioLauncher({regions,setRegion,setContextBrief,navigate}){
   return <section className="demo-scenarios-v51"><div className="demo-scenarios-head-v51"><div><p className="eyebrow">DEMO SCENARIOS</p><h2>Three click-ready stories for the SIH walkthrough.</h2><p>Each scenario preloads a city context and opens the relevant workspace.</p></div><span>FAST START</span></div><div className="demo-scenarios-grid-v51">{scenarios.map(sc=><button key={sc.title} onClick={()=>{setRegion(sc.city);setContextBrief({region:sc.city,year:2026,parcel:null,metrics:{pressure:regions.find(r=>r.name===sc.city)?.growth||0,conversion:Math.max(0,100-(regions.find(r=>r.name===sc.city)?.agri||50)),flood:40,infrastructure:65,mobility:58,population:15000,jobs:6000},source:"Prebuilt demo scenario"});sc.action()}}><div><b>{sc.title}</b><span>{sc.city} · {sc.target}</span></div><p>{sc.description}</p><em>Launch scenario →</em></button>)}</div></section>;
 }
 
-function Dashboard({region,selected,period,setPeriod,regions,data}){const d=data||{urbanGrowthIndex:selected?.growth||0,agriculturalShare:selected?.agri||0,builtUpShare:100-(selected?.agri||0),pressureScore:0,pressureLabel:selected?.pressure||"Unknown",infrastructureDemand:0,conversionRisk:0,trend:[]};return <Shell eyebrow="02 / ANALYTICS & REPORTS" title={'Measure what<br/><span>the data actually says.</span>'} subtitle="Choose a city to reframe the analytics workspace. The selector contains cities only; every metric updates to the selected city."><div className="dashboard-toolbar-v11"><div className="dashboard-location-select"><label htmlFor="dashboard-city">CITY</label><select id="dashboard-city" value={region} onChange={e=>window.dispatchEvent(new CustomEvent("bhudrishti-city-change",{detail:e.target.value}))}>{regions.map(r=><option key={r.name} value={r.name}>{r.name}</option>)}</select><span>{selected?.state||"India"}</span></div><div className="period-switch-v11">{["1 year","5 years","10 years"].map(p=><button key={p} className={period===p?"active":""} onClick={()=>setPeriod(p)}>{p}</button>)}</div></div><div className="analytics-accuracy-strip"><span>DATA CHECK</span><b>{d.recordStatus||"Calculated"}</b><small>{d.method||"Derived directly from current city indicators."}</small></div><div className="dashboard-grid-v11"><article className="dash-card-v11 large"><div className="card-head"><span>ANALYTICAL TREND · {region}</span><b>{d.urbanGrowthIndex}%</b></div><div className="bars-v4">{(d.trend||[]).map(point=><div key={point.label} style={{height:`${Math.max(8,Math.min(100,point.value))}%`}}><span>{point.label}</span></div>)}</div><p className="chart-note-v13">Normalized indicator trend for the selected city and period. It is a computed view, not a historical government time series.</p></article><article className="dash-card-v11"><span>LAND COMPOSITION · {region}</span><div className="composition-v13"><div><b>{d.agriculturalShare}%</b><span>Agricultural</span></div><div><b>{d.builtUpShare}%</b><span>Non-agricultural / built-up proxy</span></div></div><div className="composition-bar-v13"><i style={{width:`${d.agriculturalShare}%`}}/></div></article><article className="dash-card-v11"><span>KEY INDICATORS · {region}</span><div className="big-number-v11">{d.urbanGrowthIndex}<small>urban growth index</small></div><div className="big-number-v11">{d.pressureScore}<small>development pressure score</small></div><div className="big-number-v11">{d.infrastructureDemand}<small>derived infrastructure demand</small></div></article><article className="dash-card-v11"><span>GOVERNANCE SIGNALS · {region}</span><div className="signal-row-v11"><b>{d.pressureLabel}</b><span>Development pressure</span></div><div className="signal-row-v11"><b>{d.conversionRisk}%</b><span>Derived conversion-risk indicator</span></div><div className="signal-row-v11"><b>{d.periodMultiplier}×</b><span>Selected reporting window</span></div></article></div><div className="comparison-v11"><div><p className="eyebrow">CITY COMPARISON</p><h2>Compare the same metric across cities.</h2></div>{regions.slice(0,8).map(r=><div className="compare-row-v11" key={r.name}><span>{r.name}</span><i><em style={{width:`${Math.min(100,r.growth)}%`}}/></i><b>{r.growth}</b></div>)}</div></Shell>}
+function clientAnalyticsFallback(region, selected, period){
+  const current=Number(selected?.growth||0);
+  const multiplier=period==="10 years"?10:period==="1 year"?1:5;
+  const count=period==="1 year"?4:period==="10 years"?10:6;
+  const start=Math.max(0,current-Math.min(24,multiplier*1.8));
+  const trend=Array.from({length:count},(_,i)=>{
+    const value=Math.round(start+((current-start)*i/Math.max(1,count-1)));
+    const year=2026-(count-1-i)*Math.max(1,Math.round(multiplier/Math.max(1,count-1)));
+    return {label:String(year),value};
+  });
+  const pressureMap={"Very High":95,"High":78,"Moderate":55,"Low":30};
+  const pressureScore=pressureMap[selected?.pressure]??50;
+  const builtUp=Math.max(0,100-Number(selected?.agri||0));
+  const infrastructureDemand=Math.round(current*0.65+pressureScore*0.35);
+  const conversionRisk=Math.round((current*builtUp)/100);
+  return {region,state:selected?.state||"India",period,periodMultiplier:multiplier,urbanGrowthIndex:current,agriculturalShare:Number(selected?.agri||0),builtUpShare:builtUp,pressureScore,pressureLabel:selected?.pressure||"Unknown",infrastructureDemand,conversionRisk,trend,recordStatus:"CALCULATED (LOCAL FALLBACK)",method:"Derived locally from the selected city indicators so the analytics view remains usable when the API is unavailable."};
+}
+
+function Dashboard({region,selected,period,setPeriod,regions,data}){const local=clientAnalyticsFallback(region,selected,period);const d={...local,...(data||{}),trend:(data?.trend?.length?data.trend:local.trend)};return <Shell eyebrow="02 / ANALYTICS & REPORTS" title={'Measure what<br/><span>the data actually says.</span>'} subtitle="Choose a city to reframe the analytics workspace. The selector contains cities only; every metric updates to the selected city."><div className="dashboard-toolbar-v11"><div className="dashboard-location-select"><label htmlFor="dashboard-city">CITY</label><select id="dashboard-city" value={region} onChange={e=>window.dispatchEvent(new CustomEvent("bhudrishti-city-change",{detail:e.target.value}))}>{regions.map(r=><option key={r.name} value={r.name}>{r.name}</option>)}</select><span>{selected?.state||"India"}</span></div><div className="period-switch-v11">{["1 year","5 years","10 years"].map(p=><button key={p} className={period===p?"active":""} onClick={()=>setPeriod(p)}>{p}</button>)}</div></div><div className="analytics-accuracy-strip"><span>DATA CHECK</span><b>{d.recordStatus||"Calculated"}</b><small>{d.method||"Derived directly from current city indicators."}</small></div><div className="dashboard-grid-v11"><article className="dash-card-v11 large"><div className="card-head"><span>ANALYTICAL TREND · {region}</span><b>{d.urbanGrowthIndex}%</b></div><div className="bars-v4">{(d.trend||[]).map(point=><div key={point.label} style={{height:`${Math.max(8,Math.min(100,point.value))}%`}}><span>{point.label}</span></div>)}</div><p className="chart-note-v13">Normalized indicator trend for the selected city and period. It is a computed view, not a historical government time series.</p></article><article className="dash-card-v11"><span>LAND COMPOSITION · {region}</span><div className="composition-v13"><div><b>{d.agriculturalShare}%</b><span>Agricultural</span></div><div><b>{d.builtUpShare}%</b><span>Non-agricultural / built-up proxy</span></div></div><div className="composition-bar-v13"><i style={{width:`${d.agriculturalShare}%`}}/></div></article><article className="dash-card-v11"><span>KEY INDICATORS · {region}</span><div className="big-number-v11">{d.urbanGrowthIndex}<small>urban growth index</small></div><div className="big-number-v11">{d.pressureScore}<small>development pressure score</small></div><div className="big-number-v11">{d.infrastructureDemand}<small>derived infrastructure demand</small></div></article><article className="dash-card-v11"><span>GOVERNANCE SIGNALS · {region}</span><div className="signal-row-v11"><b>{d.pressureLabel}</b><span>Development pressure</span></div><div className="signal-row-v11"><b>{d.conversionRisk}%</b><span>Derived conversion-risk indicator</span></div><div className="signal-row-v11"><b>{d.periodMultiplier}×</b><span>Selected reporting window</span></div></article></div><div className="comparison-v11"><div><p className="eyebrow">CITY COMPARISON</p><h2>Compare the same metric across cities.</h2></div>{regions.slice(0,8).map(r=><div className="compare-row-v11" key={r.name}><span>{r.name}</span><i><em style={{width:`${Math.min(100,r.growth)}%`}}/></i><b>{r.growth}</b></div>)}</div></Shell>}
 
 function AuthModal({mode,setMode,setMessage,form,setForm,message,onClose,onLogin}){return <div className="auth-overlay-v4" role="dialog" aria-modal="true" aria-label="BhuDrishti account access"><div className="auth-modal-v4">
   <button className="auth-close-v4" onClick={onClose} aria-label="Close">×</button>

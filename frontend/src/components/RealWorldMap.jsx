@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { API_BASE } from "../api";
 import { Map, NavigationControl, ScaleControl, GeolocateControl, Popup, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import mapWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -153,7 +154,7 @@ export default function RealWorldMap({ region, setRegion, selectedBuilding, setS
     if (!q || searching) return;
     setSearching(true); setMessage("Searching location…");
     try {
-      const response = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+      const response = await fetch(`${API_BASE}/geocode?q=${encodeURIComponent(q)}`);
       if (!response.ok) throw new Error("Search failed");
       const results = await response.json();
       if (!results.length) throw new Error("Location not found");
@@ -217,7 +218,7 @@ async function refreshLivePoints(map, region, setLiveCount, setMessage, setRecor
   if (map.getSource(sourceId)) map.removeSource(sourceId);
   let records = [];
   try {
-    const response = await fetch(`/api/land-parcels?region=${encodeURIComponent(region)}&limit=60`);
+    const response = await fetch(`${API_BASE}/land-parcels?region=${encodeURIComponent(region)}&limit=60`);
     if (!response.ok) throw new Error("Live GIS unavailable");
     const body = await response.json();
     records = body.records || [];
@@ -311,7 +312,7 @@ async function lookupMapLocation(map, lng, lat, region, setMessage, setRecordLoa
   if (setRecordLoading) setRecordLoading(true);
   setMessage(`Analysing exact click ${lat.toFixed(6)}, ${lng.toFixed(6)}…`);
   try {
-    const response = await fetch(`/api/map-click?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&region=${encodeURIComponent(region)}`);
+    const response = await fetch(`${API_BASE}/map-click?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&region=${encodeURIComponent(region)}`);
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Map location could not be read.");
     const r = { ...(body.record || {}), latitude: lat, longitude: lng, clickedLatitude: lat, clickedLongitude: lng };
