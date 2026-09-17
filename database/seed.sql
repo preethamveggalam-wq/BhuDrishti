@@ -1,0 +1,2 @@
+-- Demo seed data for BhuDrishti V1.
+-- The Node seed script creates the SQLite database automatically.

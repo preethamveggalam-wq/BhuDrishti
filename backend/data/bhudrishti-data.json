@@ -1,0 +1,183 @@
+{
+  "regions": [
+    {
+      "id": 1,
+      "name": "Hyderabad",
+      "state": "Telangana",
+      "urban_growth": 92,
+      "agricultural_land": 38,
+      "development_pressure": "Very High",
+      "latitude": 17.385,
+      "longitude": 78.4867
+    },
+    {
+      "id": 2,
+      "name": "Bengaluru",
+      "state": "Karnataka",
+      "urban_growth": 95,
+      "agricultural_land": 29,
+      "development_pressure": "Very High",
+      "latitude": 12.9716,
+      "longitude": 77.5946
+    },
+    {
+      "id": 3,
+      "name": "Mumbai",
+      "state": "Maharashtra",
+      "urban_growth": 91,
+      "agricultural_land": 18,
+      "development_pressure": "Very High",
+      "latitude": 19.076,
+      "longitude": 72.8777
+    },
+    {
+      "id": 4,
+      "name": "Delhi",
+      "state": "Delhi",
+      "urban_growth": 89,
+      "agricultural_land": 14,
+      "development_pressure": "Very High",
+      "latitude": 28.6139,
+      "longitude": 77.209
+    },
+    {
+      "id": 5,
+      "name": "Chennai",
+      "state": "Tamil Nadu",
+      "urban_growth": 84,
+      "agricultural_land": 32,
+      "development_pressure": "High",
+      "latitude": 13.0827,
+      "longitude": 80.2707
+    },
+    {
+      "id": 6,
+      "name": "Pune",
+      "state": "Maharashtra",
+      "urban_growth": 86,
+      "agricultural_land": 34,
+      "development_pressure": "High",
+      "latitude": 18.5204,
+      "longitude": 73.8567
+    },
+    {
+      "id": 7,
+      "name": "Kolkata",
+      "state": "West Bengal",
+      "urban_growth": 72,
+      "agricultural_land": 41,
+      "development_pressure": "High",
+      "latitude": 22.5726,
+      "longitude": 88.3639
+    },
+    {
+      "id": 8,
+      "name": "Ahmedabad",
+      "state": "Gujarat",
+      "urban_growth": 83,
+      "agricultural_land": 37,
+      "development_pressure": "High",
+      "latitude": 23.0225,
+      "longitude": 72.5714
+    },
+    {
+      "id": 9,
+      "name": "Visakhapatnam",
+      "state": "Andhra Pradesh",
+      "urban_growth": 78,
+      "agricultural_land": 46,
+      "development_pressure": "High",
+      "latitude": 17.6868,
+      "longitude": 83.2185
+    },
+    {
+      "id": 10,
+      "name": "Warangal",
+      "state": "Telangana",
+      "urban_growth": 64,
+      "agricultural_land": 61,
+      "development_pressure": "High",
+      "latitude": 18,
+      "longitude": 79.58
+    },
+    {
+      "id": 11,
+      "name": "Nizamabad",
+      "state": "Telangana",
+      "urban_growth": 51,
+      "agricultural_land": 73,
+      "development_pressure": "Moderate",
+      "latitude": 18.6725,
+      "longitude": 78.0941
+    }
+  ],
+  "properties": [
+    {
+      "id": 1,
+      "ulpin": "TG-HYD-1234-5678-9012",
+      "region": "Hyderabad",
+      "property_type": "Residential",
+      "floors": 4,
+      "units": 8,
+      "area_sq_m": 3200,
+      "year_built": 2022,
+      "status": "Verified"
+    },
+    {
+      "id": 2,
+      "ulpin": "TG-HYD-8451-2201-7734",
+      "region": "Hyderabad",
+      "property_type": "Mixed Use",
+      "floors": 9,
+      "units": 18,
+      "area_sq_m": 6150,
+      "year_built": 2024,
+      "status": "Verified"
+    },
+    {
+      "id": 3,
+      "ulpin": "TG-WGL-4412-9011-5520",
+      "region": "Warangal",
+      "property_type": "Residential",
+      "floors": 3,
+      "units": 6,
+      "area_sq_m": 2100,
+      "year_built": 2021,
+      "status": "Verified"
+    }
+  ],
+  "research": [
+    {
+      "id": 1,
+      "title": "Impact of Urban Expansion on Peri-Urban Agriculture in India",
+      "publisher": "NITI Aayog",
+      "year": 2023,
+      "type": "Research Paper",
+      "topic": "Urban expansion"
+    },
+    {
+      "id": 2,
+      "title": "Land Governance Reforms for Sustainable Development",
+      "publisher": "Ministry of Rural Development",
+      "year": 2024,
+      "type": "Policy Report",
+      "topic": "Land governance"
+    },
+    {
+      "id": 3,
+      "title": "GIS-based Land Use Monitoring in Indian Cities",
+      "publisher": "Academic Research Consortium",
+      "year": 2023,
+      "type": "Research Study",
+      "topic": "GIS land-use"
+    },
+    {
+      "id": 4,
+      "title": "Urban Growth, Infrastructure and Land Conversion",
+      "publisher": "Planning Research Network",
+      "year": 2025,
+      "type": "Research Paper",
+      "topic": "Infrastructure"
+    }
+  ]
+}
